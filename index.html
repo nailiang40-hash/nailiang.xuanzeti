@@ -92,6 +92,9 @@
                             <button id="testBtn" class="mode-btn">
                                 <i class="fas fa-clock"></i> 测试模式
                             </button>
+                            <button id="randomBtn" class="mode-btn">
+                                <i class="fas fa-random"></i> 随机模式
+                            </button>
                         </div>
                         
                         <div class="settings">
@@ -150,6 +153,7 @@
                         </div>
                         
                         <div class="question-actions">
+                            <!-- 下一题按钮会动态添加在这里 -->
                             <button id="showAnswerBtn" class="btn btn-outline">
                                 <i class="fas fa-eye"></i> 显示答案
                             </button>
@@ -162,7 +166,7 @@
                             <span><kbd>A</kbd><kbd>B</kbd><kbd>C</kbd><kbd>D</kbd>：选择答案</span>
                             <span><kbd>←</kbd><kbd>→</kbd>：上一题/下一题</span>
                             <span><kbd>空格</kbd>：显示答案</span>
-                            <span><kbd>Enter</kbd>：提交</span>
+                            <span><kbd>Enter</kbd>：下一题（回答正确后）</span>
                         </div>
                     </div>
                 </div>
@@ -195,59 +199,4 @@
                             <h4><i class="fas fa-history"></i> 答题记录</h4>
                             <div id="historyList" class="history-list">
                                 <p class="empty">暂无答题记录</p>
-                            </div>
-                        </div>
-                        
-                        <button id="exportBtn" class="btn btn-outline">
-                            <i class="fas fa-download"></i> 导出记录
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <footer class="footer">
-            <p>© 2024 智能刷题系统 - 所有数据保存在浏览器本地</p>
-            <div class="footer-links">
-                <button id="showHelp" class="link-btn">使用帮助</button>
-                <button id="showAbout" class="link-btn">关于系统</button>
-            </div>
-        </footer>
-    </div>
-
-    <!-- 提示消息 -->
-    <div id="toast" class="toast"></div>
-
-    <!-- 帮助弹窗 -->
-    <div id="helpModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-question-circle"></i> 使用帮助</h3>
-                <button class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <h4>如何上传题库？</h4>
-                <p>1. 创建TXT文件，格式：<code>题目|选项A|选项B|选项C|选项D|正确答案</code></p>
-                <p>2. 点击"选择文件"或拖放文件到上传区域</p>
-                <p>3. 点击"开始刷题"按钮</p>
-                
-                <h4>示例格式：</h4>
-                <pre>
-水的化学式1是什么？|H2O|CO2|O2|NaCl|A
-中国首都是哪里？|上海|广州|北京|深圳|C
-一年有多少个月？|10|11|12|13|C</pre>
-                
-                <h4>键盘快捷键：</h4>
-                <ul>
-                    <li>A/B/C/D：选择对应选项</li>
-                    <li>←/→：上一题/下一题</li>
-                    <li>空格：显示/隐藏答案</li>
-                    <li>Enter：提交答案</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html>
+                            </div
