@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能刷题系统</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-graduation-cap"></i> 智能刷题系统</h1>
+            <p>支持本地题库上传 • 即时反馈 • 数据保存</p>
+        </header>
+
+        <!-- 上传界面 -->
+        <main class="main-content" id="uploadSection">
+            <div class="upload-card">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <h2>上传题库文件</h2>
+                <p>支持TXT格式，每行格式：<br>
+                <strong>题目|选项A|选项B|选项C|选项D|正确答案</strong></p>
+                
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-file-alt fa-3x"></i>
+                    <p>拖放文件到此处，或</p>
+                    <button class="btn btn-primary" id="selectFileBtn">
+                        <i class="fas fa-folder-open"></i> 选择文件
+                    </button>
+                    <input type="file" id="fileInput" accept=".txt" style="display: none;">
+                    <p class="file-hint">支持TXT格式，使用 | 或 , 分隔</p>
+                </div>
+                
+                <div class="file-info" id="fileInfo" style="display: none;">
+                    <div class="file-details">
+                        <i class="fas fa-file"></i>
+                        <div>
+                            <h4 id="fileName"></h4>
+                            <p id="fileStats"></p>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" id="startQuizBtn">
+                        <i class="fas fa-play"></i> 开始刷题
+                    </button>
+                </div>
+                
+                <div class="sample-section">
+                    <h3>没有题库文件？</h3>
+                    <button class="btn btn-outline" id="loadSampleBtn">
+                        <i class="fas fa-download"></i> 使用示例题库
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- 答题界面（默认隐藏） -->
+        <div class="quiz-container" id="quizSection" style="display: none;">
+            <div class="quiz-layout">
+                <!-- 左侧控制面板 -->
+                <div class="control-panel">
+                    <div class="panel">
+                        <h3><i class="fas fa-cog"></i> 控制面板</h3>
+                        
+                        <div class="progress-container">
+                            <div class="progress-label">
+                                <span>进度</span>
+                                <span id="progressText">0/0</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div id="progressFill" class="progress-fill"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="nav-buttons">
+                            <button id="firstBtn" class="nav-btn"><i class="fas fa-fast-backward"></i></button>
+                            <button id="prevBtn" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+                            <div class="jump-box">
+                                <input type="number" id="jumpInput" min="1" value="1" placeholder="题号">
+                                <button id="jumpBtn" class="small-btn">跳转</button>
+                            </div>
+                            <button id="nextBtn" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+                            <button id="lastBtn" class="nav-btn"><i class="fas fa-fast-forward"></i></button>
+                        </div>
+                        
+                        <div class="mode-selector">
+                            <button id="practiceBtn" class="mode-btn active">
+                                <i class="fas fa-graduation-cap"></i> 练习模式
+                            </button>
+                            <button id="testBtn" class="mode-btn">
+                                <i class="fas fa-clock"></i> 测试模式
+                            </button>
+                        </div>
+                        
+                        <div class="settings">
+                            <h4><i class="fas fa-sliders-h"></i> 设置</h4>
+                            <div class="setting">
+                                <label>字体大小：</label>
+                                <select id="fontSize">
+                                    <option value="small">小</option>
+                                    <option value="medium" selected>中</option>
+                                    <option value="large">大</option>
+                                </select>
+                            </div>
+                            <div class="setting">
+                                <label>主题：</label>
+                                <select id="theme">
+                                    <option value="light" selected>浅色</option>
+                                    <option value="dark">深色</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button id="resetBtn" class="btn btn-warning">
+                            <i class="fas fa-redo"></i> 重置记录
+                        </button>
+                        <button id="backBtn" class="btn btn-outline">
+                            <i class="fas fa-arrow-left"></i> 返回上传
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 中间题目区 -->
+                <div class="question-area">
+                    <div class="question-card">
+                        <div class="question-header">
+                            <div class="question-info">
+                                <span id="questionNum">题目 #1</span>
+                                <span id="totalQuestions">/ 0</span>
+                            </div>
+                            <div class="timer">
+                                <i class="fas fa-clock"></i>
+                                <span id="timer">00:00</span>
+                            </div>
+                        </div>
+                        
+                        <div class="question-content">
+                            <h2 id="questionText">请上传题库开始刷题</h2>
+                        </div>
+                        
+                        <div class="options-grid" id="optionsContainer">
+                            <!-- 选项按钮会动态生成 -->
+                        </div>
+                        
+                        <div class="feedback-box" id="feedbackBox">
+                            <i class="fas fa-info-circle"></i>
+                            <span>请选择一个答案</span>
+                        </div>
+                        
+                        <div class="question-actions">
+                            <button id="showAnswerBtn" class="btn btn-outline">
+                                <i class="fas fa-eye"></i> 显示答案
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="hint-box">
+                        <h4><i class="fas fa-keyboard"></i> 快捷键</h4>
+                        <div class="shortcuts">
+                            <span><kbd>A</kbd><kbd>B</kbd><kbd>C</kbd><kbd>D</kbd>：选择答案</span>
+                            <span><kbd>←</kbd><kbd>→</kbd>：上一题/下一题</span>
+                            <span><kbd>空格</kbd>：显示答案</span>
+                            <span><kbd>Enter</kbd>：提交</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右侧统计区 -->
+                <div class="stats-panel">
+                    <div class="panel">
+                        <h3><i class="fas fa-chart-bar"></i> 统计</h3>
+                        
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-value" id="correctCount">0</div>
+                                <div class="stat-label">正确</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="incorrectCount">0</div>
+                                <div class="stat-label">错误</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="accuracyRate">0%</div>
+                                <div class="stat-label">正确率</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="answeredCount">0</div>
+                                <div class="stat-label">已答</div>
+                            </div>
+                        </div>
+                        
+                        <div class="answer-history">
+                            <h4><i class="fas fa-history"></i> 答题记录</h4>
+                            <div id="historyList" class="history-list">
+                                <p class="empty">暂无答题记录</p>
+                            </div>
+                        </div>
+                        
+                        <button id="exportBtn" class="btn btn-outline">
+                            <i class="fas fa-download"></i> 导出记录
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>© 2024 智能刷题系统 - 所有数据保存在浏览器本地</p>
+            <div class="footer-links">
+                <button id="showHelp" class="link-btn">使用帮助</button>
+                <button id="showAbout" class="link-btn">关于系统</button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 提示消息 -->
+    <div id="toast" class="toast"></div>
+
+    <!-- 帮助弹窗 -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-question-circle"></i> 使用帮助</h3>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4>如何上传题库？</h4>
+                <p>1. 创建TXT文件，格式：<code>题目|选项A|选项B|选项C|选项D|正确答案</code></p>
+                <p>2. 点击"选择文件"或拖放文件到上传区域</p>
+                <p>3. 点击"开始刷题"按钮</p>
+                
+                <h4>示例格式：</h4>
+                <pre>
+水的化学式是什么？|H2O|CO2|O2|NaCl|A
+中国首都是哪里？|上海|广州|北京|深圳|C
+一年有多少个月？|10|11|12|13|C</pre>
+                
+                <h4>键盘快捷键：</h4>
+                <ul>
+                    <li>A/B/C/D：选择对应选项</li>
+                    <li>←/→：上一题/下一题</li>
+                    <li>空格：显示/隐藏答案</li>
+                    <li>Enter：提交答案</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
