@@ -19,6 +19,9 @@ let appState = {
     }
 };
 
+// 计时器变量
+let timerInterval = null;
+
 // 示例题库（包含多选题）
 const SAMPLE_QUESTIONS = [
     {
@@ -112,8 +115,10 @@ function setupOptionButtons() {
         if (userAnswer) {
             if (question.type === 'multi') {
                 // 多选题：检查是否包含该选项
-                const isSelected = userAnswer.userAnswer.includes(letter);
-                const isCorrect = question.correctAnswer.includes(letter);
+                const userAnswers = userAnswer.userAnswer.split(',').map(a => a.trim());
+                const isSelected = userAnswers.includes(letter);
+                const correctAnswers = question.correctAnswer.split(',').map(a => a.trim());
+                const isCorrect = correctAnswers.includes(letter);
                 
                 if (isSelected && isCorrect) {
                     button.classList.add('correct');
@@ -160,6 +165,7 @@ function selectAnswer(selectedOption) {
     
     const question = appState.questions[appState.currentIndex];
     let userAnswer = appState.answers[question.id];
+    const previousAnswer = userAnswer ? {...userAnswer} : null;
     
     // 如果已经回答过且在测试模式下，不允许修改
     if (userAnswer && appState.settings.mode === 'test') {
@@ -191,8 +197,10 @@ function selectAnswer(selectedOption) {
         }
         
         // 检查是否正确（多选题需要全部正确且不多选）
-        const correctAnswers = question.correctAnswer.split(',').sort().join(',');
-        userAnswer.isCorrect = userAnswer.userAnswer === correctAnswers;
+        const correctAnswers = question.correctAnswer.split(',').map(a => a.trim()).sort();
+        const userAnswers = userAnswer.userAnswer.split(',').map(a => a.trim()).sort();
+        userAnswer.isCorrect = JSON.stringify(userAnswers) === JSON.stringify(correctAnswers);
+        userAnswer.timestamp = Date.now();
         
     } else {
         // 单选题
@@ -206,15 +214,20 @@ function selectAnswer(selectedOption) {
     // 保存答案
     appState.answers[question.id] = userAnswer;
     
-    // 更新统计
-    if (userAnswer.isCorrect && !appState.answers[question.id]?.isCorrect) {
-        // 之前不正确，现在正确了
-        appState.stats.correct++;
-    } else if (!userAnswer.isCorrect && appState.answers[question.id]?.isCorrect) {
-        // 之前正确，现在不正确了
-        appState.stats.correct--;
-        appState.stats.incorrect++;
-    } else if (!appState.answers[question.id]) {
+    // 更新统计（正确处理多选题的统计）
+    if (previousAnswer) {
+        // 如果之前有答案，需要更新统计
+        if (previousAnswer.isCorrect && !userAnswer.isCorrect) {
+            // 之前正确，现在错误
+            appState.stats.correct--;
+            appState.stats.incorrect++;
+        } else if (!previousAnswer.isCorrect && userAnswer.isCorrect) {
+            // 之前错误，现在正确
+            appState.stats.incorrect--;
+            appState.stats.correct++;
+        }
+        // 如果正确性没有变化，统计不变
+    } else {
         // 新答题
         if (userAnswer.isCorrect) {
             appState.stats.correct++;
@@ -321,6 +334,11 @@ function updateQuestionDisplay() {
     const userAnswer = appState.answers[question.id];
     if (userAnswer) {
         showAnswerFeedback(userAnswer.isCorrect, userAnswer.userAnswer, question.correctAnswer);
+        
+        // 如果是单选题且正确，显示下一题按钮
+        if (question.type === 'single' && userAnswer.isCorrect && appState.settings.mode === 'practice') {
+            showNextButton();
+        }
     } else {
         const feedbackBox = document.getElementById('feedbackBox');
         feedbackBox.className = 'feedback-box';
@@ -387,7 +405,7 @@ function bindEvents() {
         });
     }
     
-    // 开始刷题按钮
+    // 开始刷题按钮（保持原有功能）
     const startQuizBtn = document.getElementById('startQuizBtn');
     if (startQuizBtn) {
         startQuizBtn.addEventListener('click', startQuiz);
@@ -480,6 +498,15 @@ function setMode(mode) {
 function loadSampleQuestions() {
     console.log('加载示例题库...');
     
+    // 显示加载状态
+    const loadSampleBtn = document.getElementById('loadSampleBtn');
+    const originalText = loadSampleBtn ? loadSampleBtn.innerHTML : '';
+    
+    if (loadSampleBtn) {
+        loadSampleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 加载中...';
+        loadSampleBtn.disabled = true;
+    }
+    
     appState.questions = SAMPLE_QUESTIONS;
     appState.stats.total = SAMPLE_QUESTIONS.length;
     
@@ -489,6 +516,20 @@ function loadSampleQuestions() {
     document.getElementById('fileInfo').style.display = 'flex';
     
     showToast(`示例题库加载成功！共 ${SAMPLE_QUESTIONS.length} 道题目`, 'success');
+    
+    // ==== 关键修复：自动跳转到答题界面 ====
+    // 恢复按钮状态
+    if (loadSampleBtn) {
+        setTimeout(() => {
+            loadSampleBtn.innerHTML = originalText;
+            loadSampleBtn.disabled = false;
+        }, 500);
+    }
+    
+    // 等待一小段时间让用户看到成功提示，然后自动开始刷题
+    setTimeout(() => {
+        startQuiz();
+    }, 800);
 }
 
 // 开始刷题
@@ -500,9 +541,18 @@ function startQuiz() {
     
     console.log('开始刷题...');
     
+    // 确保界面元素存在
+    const uploadSection = document.getElementById('uploadSection');
+    const quizSection = document.getElementById('quizSection');
+    
+    if (!uploadSection || !quizSection) {
+        console.error('找不到界面元素！');
+        return;
+    }
+    
     // 切换到答题界面
-    document.getElementById('uploadSection').style.display = 'none';
-    document.getElementById('quizSection').style.display = 'block';
+    uploadSection.style.display = 'none';
+    quizSection.style.display = 'block';
     
     // 重置状态
     appState.currentIndex = 0;
@@ -528,6 +578,17 @@ function handleFileSelect(event) {
         return;
     }
     
+    // 显示上传状态
+    const uploadArea = document.getElementById('uploadArea');
+    if (uploadArea) {
+        uploadArea.innerHTML = `
+            <i class="fas fa-spinner fa-spin fa-3x"></i>
+            <p>正在读取文件...</p>
+        `;
+        uploadArea.style.borderColor = '#4a6bff';
+        uploadArea.style.backgroundColor = 'rgba(74, 107, 255, 0.05)';
+    }
+    
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
@@ -536,6 +597,19 @@ function handleFileSelect(event) {
             
             if (questions.length === 0) {
                 showToast('未找到有效题目，请检查文件格式！', 'error');
+                // 恢复上传区域
+                if (uploadArea) {
+                    uploadArea.innerHTML = `
+                        <i class="fas fa-file-alt fa-3x"></i>
+                        <p>拖放文件到此处，或</p>
+                        <button class="btn btn-primary" id="selectFileBtn">
+                            <i class="fas fa-folder-open"></i> 选择文件
+                        </button>
+                        <p class="file-hint">支持TXT格式，使用 | 或 , 分隔</p>
+                    `;
+                    uploadArea.style.borderColor = '#dee2e6';
+                    uploadArea.style.backgroundColor = '';
+                }
                 return;
             }
             
@@ -547,16 +621,48 @@ function handleFileSelect(event) {
             document.getElementById('fileStats').textContent = `共 ${questions.length} 道题目`;
             document.getElementById('fileInfo').style.display = 'flex';
             
-            showToast(`成功加载 ${questions.length} 道题目！`, 'success');
+            showToast(`成功加载 ${questions.length} 道题目！即将开始刷题...`, 'success');
+            
+            // ==== 关键修复：自动跳转到答题界面 ====
+            // 等待一小段时间让用户看到成功提示，然后自动开始刷题
+            setTimeout(() => {
+                startQuiz();
+            }, 1000);
             
         } catch (error) {
             console.error('解析文件失败:', error);
             showToast('文件解析失败，请检查格式！', 'error');
+            // 恢复上传区域
+            if (uploadArea) {
+                uploadArea.innerHTML = `
+                    <i class="fas fa-file-alt fa-3x"></i>
+                    <p>拖放文件到此处，或</p>
+                    <button class="btn btn-primary" id="selectFileBtn">
+                        <i class="fas fa-folder-open"></i> 选择文件
+                    </button>
+                    <p class="file-hint">支持TXT格式，使用 | 或 , 分隔</p>
+                `;
+                uploadArea.style.borderColor = '#dee2e6';
+                uploadArea.style.backgroundColor = '';
+            }
         }
     };
     
     reader.onerror = function() {
         showToast('读取文件失败！', 'error');
+        // 恢复上传区域
+        if (uploadArea) {
+            uploadArea.innerHTML = `
+                <i class="fas fa-file-alt fa-3x"></i>
+                <p>拖放文件到此处，或</p>
+                <button class="btn btn-primary" id="selectFileBtn">
+                    <i class="fas fa-folder-open"></i> 选择文件
+                </button>
+                <p class="file-hint">支持TXT格式，使用 | 或 , 分隔</p>
+            `;
+            uploadArea.style.borderColor = '#dee2e6';
+            uploadArea.style.backgroundColor = '';
+        }
     };
     
     reader.readAsText(file, 'UTF-8');
@@ -752,15 +858,29 @@ function resetAnswers() {
 // 返回上传界面
 function backToUpload() {
     if (confirm('返回上传界面？当前进度会保存。')) {
+        // 清除计时器
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        
+        // 切换到上传界面
         document.getElementById('uploadSection').style.display = 'block';
         document.getElementById('quizSection').style.display = 'none';
+        
+        showToast('已返回上传界面', 'info');
     }
 }
 
 // 开始计时器
 function startTimer() {
+    // 清除已有的计时器
+    if (timerInterval) {
+        clearInterval(timerInterval);
+    }
+    
     updateTimer();
-    setInterval(updateTimer, 1000);
+    timerInterval = setInterval(updateTimer, 1000);
 }
 
 function updateTimer() {
