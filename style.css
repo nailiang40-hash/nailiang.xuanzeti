@@ -946,3 +946,59 @@ body.font-medium {
 body.font-large {
     font-size: 18px;
 }
+/* 在原有CSS中添加以下样式 */
+
+/* 多选题提示 */
+.multi-hint {
+    grid-column: 1 / -1;
+    background-color: #e7f1ff;
+    border: 2px solid #4a6bff;
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.multi-hint i {
+    color: #4a6bff;
+}
+
+/* 多选题按钮样式 */
+.option-btn.multi-selected {
+    background-color: rgba(74, 107, 255, 0.1);
+    border-color: #4a6bff;
+}
+
+/* 深色主题下的多选题提示 */
+body.dark-theme .multi-hint {
+    background-color: rgba(74, 107, 255, 0.2);
+    border-color: #4a6bff;
+    color: #e2e8f0;
+}
+
+/* 修改问题操作区域，确保按钮有足够的空间 */
+.question-actions {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* 确保按钮在移动设备上可点击 */
+@media (max-width: 768px) {
+    .option-btn {
+        min-height: 60px;
+        padding: 15px;
+    }
+    
+    .mode-btn {
+        font-size: 12px;
+        padding: 8px 4px;
+        min-height: 50px;
+    }
+}
