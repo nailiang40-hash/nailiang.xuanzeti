@@ -23,6 +23,8 @@
             --border-color: #e2e8f0;
             --hover-color: #eff6ff;
             --progress-bg: #e2e8f0;
+            --type-tag-bg: #e0f2fe;
+            --type-tag-text: #0369a1;
         }
 
         /* 深色模式 */
@@ -33,6 +35,8 @@
             --border-color: #334155;
             --hover-color: #273449;
             --progress-bg: #334155;
+            --type-tag-bg: #075985;
+            --type-tag-text: #bae6fd;
         }
 
         body {
@@ -154,8 +158,20 @@
         .question-info {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* 题型标签 */
+        .question-type-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background-color: var(--type-tag-bg);
+            color: var(--type-tag-text);
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 16px;
             font-weight: 600;
         }
 
@@ -171,7 +187,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .option-btn {
@@ -214,6 +230,23 @@
             width: 24px;
             font-weight: 600;
             margin-right: 12px;
+        }
+
+        /* 提交按钮区域 */
+        .submit-btn-area {
+            text-align: center;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .submit-btn {
+            background-color: var(--success-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background-color: #059669;
         }
 
         /* 导航按钮 */
@@ -358,11 +391,19 @@
                 <span id="totalQuestions">/ 0</span>
             </div>
 
+            <!-- 题型标签 -->
+            <div class="question-type-tag" id="questionTypeTag">单选题</div>
+
             <!-- 题目内容 -->
             <div class="question-content" id="questionText">请先上传题库文件开始刷题</div>
 
             <!-- 选项区域 -->
             <div class="options-container" id="optionsContainer"></div>
+
+            <!-- 多选题提交按钮 -->
+            <div class="submit-btn-area" id="submitBtnArea">
+                <button class="btn submit-btn" id="submitAnswerBtn">提交答案</button>
+            </div>
 
             <!-- 导航按钮 -->
             <div class="nav-buttons">
@@ -405,6 +446,9 @@
             questionNum: null,
             totalQuestions: null,
             questionText: null,
+            questionTypeTag: null,
+            submitBtnArea: null,
+            submitAnswerBtn: null,
             progressBar: null,
             progressText: null,
             correctCount: null,
@@ -444,6 +488,9 @@
             DOM_CACHE.questionNum = document.getElementById('questionNum');
             DOM_CACHE.totalQuestions = document.getElementById('totalQuestions');
             DOM_CACHE.questionText = document.getElementById('questionText');
+            DOM_CACHE.questionTypeTag = document.getElementById('questionTypeTag');
+            DOM_CACHE.submitBtnArea = document.getElementById('submitBtnArea');
+            DOM_CACHE.submitAnswerBtn = document.getElementById('submitAnswerBtn');
             DOM_CACHE.progressBar = document.getElementById('progressBar');
             DOM_CACHE.progressText = document.getElementById('progressText');
             DOM_CACHE.correctCount = document.getElementById('correctCount');
@@ -487,6 +534,15 @@
                     const selectedOption = optionBtn.dataset.option;
                     selectAnswer(selectedOption);
                 }
+            });
+
+            // 多选题提交答案按钮
+            DOM_CACHE.submitAnswerBtn.addEventListener('click', () => {
+                if (appState.selectedOptions.length === 0) {
+                    showToast('请至少选择一个选项！', 'error');
+                    return;
+                }
+                validateAnswer();
             });
 
             // 主题切换按钮
@@ -569,15 +625,18 @@
 
                 // 判断题型
                 let questionType = 'single';
+                let typeText = '单选题';
                 // 判断题：选项为 对/错
                 if ((options[0] === '对' && options[1] === '错') && !options[2] && !options[3]) {
                     questionType = 'judge';
+                    typeText = '判断题';
                     // 统一判断题答案格式
                     answerStr = answerStr === '对' || answerStr === 'A' ? '对' : '错';
                 } 
                 // 多选题：答案包含多个选项（只要不是单个A/B/C/D/对/错，都判定为多选）
                 else if (!['A', 'B', 'C', 'D', '对', '错'].includes(answerStr)) {
                     questionType = 'multiple';
+                    typeText = '多选题';
                     // 彻底拆分多选题答案：兼容所有格式
                     let answers = [];
                     // 1. 先按分隔符拆分（逗号、空格）
@@ -622,6 +681,7 @@
                     id: questionId++,
                     question: questionText,
                     type: questionType,
+                    typeText: typeText,
                     options: options,
                     correctAnswers: correctAnswers
                 };
@@ -657,6 +717,15 @@
             // 更新题目信息
             DOM_CACHE.questionNum.textContent = `题目 #${question.id}`;
             DOM_CACHE.questionText.textContent = question.question;
+            // 显示题型标签
+            DOM_CACHE.questionTypeTag.textContent = question.typeText;
+            
+            // 控制提交按钮显示：仅多选题显示
+            if (question.type === 'multiple') {
+                DOM_CACHE.submitBtnArea.style.display = 'block';
+            } else {
+                DOM_CACHE.submitBtnArea.style.display = 'none';
+            }
             
             // 重置作答状态
             appState.isAnswered = false;
@@ -733,7 +802,7 @@
         }
 
         /**
-         * 处理选项选择（支持单选/多选/判断，优化多选题选择逻辑）
+         * 处理选项选择（支持单选/多选/判断）
          * @param {string} selectedOption - 选中的选项
          */
         function selectAnswer(selectedOption) {
@@ -742,12 +811,14 @@
             // 重置选项样式
             const optionButtons = document.querySelectorAll('.option-btn');
             
-            // 单选/判断题逻辑：只能选一个
+            // 单选/判断题逻辑：只能选一个，选择后直接验证
             if (question.type === 'single' || question.type === 'judge') {
                 optionButtons.forEach(btn => btn.classList.remove('selected'));
                 appState.selectedOptions = [selectedOption];
+                // 单选/判断选择后直接验证
+                validateAnswer();
             } 
-            // 多选题逻辑：可多选，toggle选中状态
+            // 多选题逻辑：可多选，仅切换选中状态，不验证
             else if (question.type === 'multiple') {
                 const optionIndex = appState.selectedOptions.indexOf(selectedOption);
                 if (optionIndex > -1) {
@@ -768,9 +839,6 @@
                     });
                 }
             }
-
-            // 验证答案
-            validateAnswer();
         }
 
         /**
@@ -852,6 +920,11 @@
                     btn.classList.add('incorrect');
                 }
             });
+
+            // 多选题隐藏提交按钮
+            if (question.type === 'multiple') {
+                DOM_CACHE.submitBtnArea.style.display = 'none';
+            }
         }
 
         // 上一题
