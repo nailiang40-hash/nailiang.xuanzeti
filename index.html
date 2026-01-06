@@ -4,65 +4,971 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智能刷题系统</title>
-    <!-- 引入CSS样式文件 -->
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft Yahei', sans-serif;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --text-color: #334155;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --hover-color: #eff6ff;
+            --progress-bg: #e2e8f0;
+        }
+
+        /* 深色模式 */
+        .dark-mode {
+            --text-color: #f1f5f9;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+            --hover-color: #273449;
+            --progress-bg: #334155;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 头部 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .theme-btn {
+            padding: 8px 16px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* 上传区域 */
+        .upload-area {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .upload-tip {
+            font-size: 14px;
+            color: var(--text-color);
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+
+        .upload-tip span {
+            display: block;
+            margin-top: 8px;
+            color: #64748b;
+        }
+
+        .upload-btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* 按钮通用样式 */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .primary-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .primary-btn:hover:not(:disabled) {
+            background-color: #1d4ed8;
+        }
+
+        .primary-btn:disabled {
+            background-color: var(--border-color);
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* 刷题区域 */
+        .quiz-area {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* 计时器 */
+        .timer {
+            text-align: right;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        /* 题目信息 */
+        .question-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* 题目内容 */
+        .question-content {
+            font-size: 18px;
+            margin-bottom: 24px;
+            line-height: 1.8;
+        }
+
+        /* 选项区域 */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .option-btn {
+            padding: 14px 16px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-color);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-btn:hover {
+            background-color: var(--hover-color);
+        }
+
+        .option-btn.selected {
+            background-color: var(--hover-color);
+            border-color: var(--primary-color);
+        }
+
+        .option-btn.correct {
+            background-color: rgba(16, 185, 129, 0.1);
+            border-color: var(--success-color);
+            color: var(--success-color);
+        }
+
+        .option-btn.incorrect {
+            background-color: rgba(239, 68, 68, 0.1);
+            border-color: var(--error-color);
+            color: var(--error-color);
+        }
+
+        .option-letter {
+            display: inline-block;
+            width: 24px;
+            font-weight: 600;
+            margin-right: 12px;
+        }
+
+        /* 导航按钮 */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background-color: #1d4ed8;
+        }
+
+        .nav-btn:disabled {
+            background-color: var(--border-color);
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* 进度条 */
+        .progress-container {
+            position: relative;
+            height: 8px;
+            background-color: var(--progress-bg);
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            position: absolute;
+            right: 0;
+            top: -20px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        /* 统计区域 */
+        .stats-area {
+            display: flex;
+            justify-content: space-around;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .stat-item {
+            font-size: 16px;
+        }
+
+        .stat-item span {
+            font-weight: 600;
+            margin-left: 4px;
+        }
+
+        /* 提示框 */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background-color: #1e293b;
+            color: white;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .toast.success {
+            background-color: var(--success-color);
+        }
+
+        .toast.error {
+            background-color: var(--error-color);
+        }
+
+        .toast.info {
+            background-color: var(--primary-color);
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .upload-area, .quiz-area {
+                padding: 16px;
+            }
+            
+            .btn {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <button id="themeToggleBtn">切换深色模式</button>
-    
     <div class="container">
-        <h1>智能刷题系统</h1>
+        <header class="header">
+            <h1>智能刷题系统</h1>
+            <button id="themeToggleBtn" class="theme-btn">切换深色模式</button>
+        </header>
 
         <!-- 文件上传区域 -->
         <div class="upload-area">
-            <p>请上传题库文件（TXT格式，每行格式：问题|选项A|选项B|选项C|选项D|正确答案|解析）</p>
-            <p>多选题格式：问题|选项A|选项B|选项C|选项D|A,C|解析</p>
-            <input type="file" id="fileInput" accept=".txt">
-            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">选择文件</button>
-            <button class="upload-btn" id="startQuizBtn" disabled>开始刷题</button>
+            <p class="upload-tip">
+                支持题型：单选题/多选题/判断题<br>
+                格式要求：
+                <span>单选题：问题|A|B|C|D|正确答案</span>
+                <span>多选题：问题|A|B|C|D|ABC（或A,C/A B C/abcd）</span>
+                <span>判断题：问题|对|错|||正确答案（对/错）</span>
+            </p>
+            <div class="upload-btn-group">
+                <input type="file" id="fileInput" accept=".txt">
+                <button class="btn primary-btn" onclick="document.getElementById('fileInput').click()">选择题库文件</button>
+                <button class="btn primary-btn" id="startQuizBtn" disabled>开始刷题</button>
+            </div>
         </div>
 
-        <!-- 计时器 -->
-        <div class="timer" id="timer">00:00:00</div>
+        <!-- 刷题区域 -->
+        <div class="quiz-area">
+            <!-- 计时器 -->
+            <div class="timer" id="timer">00:00:00</div>
 
-        <!-- 题目区域 -->
-        <div class="question-area">
-            <div class="question-header">
+            <!-- 题目信息 -->
+            <div class="question-info">
                 <span id="questionNum">题目 #1</span>
                 <span id="totalQuestions">/ 0</span>
             </div>
-            <div class="question-text" id="questionText">请先上传题库文件开始刷题</div>
-        </div>
 
-        <!-- 选项区域 -->
-        <div class="options-container" id="optionsContainer"></div>
+            <!-- 题目内容 -->
+            <div class="question-content" id="questionText">请先上传题库文件开始刷题</div>
 
-        <!-- 快捷下一题按钮容器 -->
-        <div id="actionContainer"></div>
+            <!-- 选项区域 -->
+            <div class="options-container" id="optionsContainer"></div>
 
-        <!-- 导航按钮 -->
-        <div class="nav-buttons">
-            <button class="nav-btn" id="prevBtn" onclick="goToPrevQuestion()" disabled>上一题</button>
-            <button class="nav-btn" id="nextBtn" onclick="goToNextQuestion()" disabled>下一题</button>
-        </div>
+            <!-- 导航按钮 -->
+            <div class="nav-buttons">
+                <button class="btn nav-btn" id="prevBtn" onclick="goToPrevQuestion()" disabled>上一题</button>
+                <button class="btn nav-btn" id="nextBtn" onclick="goToNextQuestion()" disabled>下一题</button>
+            </div>
 
-        <!-- 进度条 -->
-        <div class="progress-container">
-            <div class="progress-bar" id="progressBar" style="width: 0%"></div>
-        </div>
+            <!-- 进度条 -->
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+                <div class="progress-text" id="progressText">0/0</div>
+            </div>
 
-        <!-- 统计区域 -->
-        <div class="stats-area">
-            <div>正确: <span id="correctCount">0</span></div>
-            <div>错误: <span id="incorrectCount">0</span></div>
-            <div>已答: <span id="attemptedCount">0</span></div>
+            <!-- 统计区域 -->
+            <div class="stats-area">
+                <div class="stat-item">正确：<span id="correctCount">0</span></div>
+                <div class="stat-item">错误：<span id="incorrectCount">0</span></div>
+                <div class="stat-item">已答：<span id="attemptedCount">0</span></div>
+            </div>
         </div>
     </div>
 
     <!-- 提示框 -->
     <div class="toast" id="toast"></div>
 
-    <!-- 引入JavaScript文件 -->
-    <script src="script.js"></script>
+    <script>
+        // 全局常量
+        const CONSTANTS = {
+            STORAGE_KEY: 'quizAppData',
+            TOAST_DURATION: 2000,
+            TIMER_INTERVAL: 1000,
+            SUPPORTED_FILE_TYPES: ['.txt'],
+            ANSWER_OPTIONS: ['A', 'B', 'C', 'D'],
+            AUTO_NEXT_DELAY: 1000 // 答对后自动跳转延迟（毫秒）
+        };
+
+        // DOM缓存
+        const DOM_CACHE = {
+            optionsContainer: null,
+            questionNum: null,
+            totalQuestions: null,
+            questionText: null,
+            progressBar: null,
+            progressText: null,
+            correctCount: null,
+            incorrectCount: null,
+            attemptedCount: null,
+            prevBtn: null,
+            nextBtn: null,
+            startQuizBtn: null,
+            fileInput: null,
+            timer: null,
+            toast: null,
+            themeToggleBtn: null
+        };
+
+        // 全局状态
+        let appState = {
+            questions: [],
+            currentIndex: 0,
+            answers: {},
+            stats: {
+                correct: 0,
+                incorrect: 0,
+                totalAttempted: 0
+            },
+            settings: {
+                theme: 'light'
+            },
+            timerId: null,
+            elapsedTime: 0,
+            selectedOptions: [],
+            isAnswered: false // 当前题是否已作答
+        };
+
+        // 初始化DOM缓存
+        function initDOMCache() {
+            DOM_CACHE.optionsContainer = document.getElementById('optionsContainer');
+            DOM_CACHE.questionNum = document.getElementById('questionNum');
+            DOM_CACHE.totalQuestions = document.getElementById('totalQuestions');
+            DOM_CACHE.questionText = document.getElementById('questionText');
+            DOM_CACHE.progressBar = document.getElementById('progressBar');
+            DOM_CACHE.progressText = document.getElementById('progressText');
+            DOM_CACHE.correctCount = document.getElementById('correctCount');
+            DOM_CACHE.incorrectCount = document.getElementById('incorrectCount');
+            DOM_CACHE.attemptedCount = document.getElementById('attemptedCount');
+            DOM_CACHE.prevBtn = document.getElementById('prevBtn');
+            DOM_CACHE.nextBtn = document.getElementById('nextBtn');
+            DOM_CACHE.startQuizBtn = document.getElementById('startQuizBtn');
+            DOM_CACHE.fileInput = document.getElementById('fileInput');
+            DOM_CACHE.timer = document.getElementById('timer');
+            DOM_CACHE.toast = document.getElementById('toast');
+            DOM_CACHE.themeToggleBtn = document.getElementById('themeToggleBtn');
+        }
+
+        // 初始化应用
+        function initApp() {
+            initDOMCache();
+            bindEvents();
+            loadFromStorage();
+            
+            // 恢复主题
+            if (appState.settings.theme === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+            
+            showToast('智能刷题系统已就绪！', 'info');
+        }
+
+        // 绑定事件
+        function bindEvents() {
+            // 文件选择事件
+            DOM_CACHE.fileInput.addEventListener('change', handleFileUpload);
+            
+            // 开始刷题按钮
+            DOM_CACHE.startQuizBtn.addEventListener('click', startQuiz);
+            
+            // 选项按钮事件委托
+            DOM_CACHE.optionsContainer.addEventListener('click', (e) => {
+                const optionBtn = e.target.closest('.option-btn');
+                if (optionBtn && !appState.isAnswered) {
+                    const selectedOption = optionBtn.dataset.option;
+                    selectAnswer(selectedOption);
+                }
+            });
+
+            // 主题切换按钮
+            DOM_CACHE.themeToggleBtn.addEventListener('click', toggleTheme);
+
+            // 页面卸载时清除定时器
+            window.addEventListener('beforeunload', () => {
+                if (appState.timerId) clearInterval(appState.timerId);
+            });
+        }
+
+        // 处理文件上传
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // 校验文件类型
+            const fileExt = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+            if (!CONSTANTS.SUPPORTED_FILE_TYPES.includes(fileExt)) {
+                showToast('请上传TXT格式的文件！', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const text = event.target.result;
+                    appState.questions = parseQuestions(text);
+                    
+                    if (appState.questions.length > 0) {
+                        DOM_CACHE.startQuizBtn.disabled = false;
+                        DOM_CACHE.totalQuestions.textContent = `/ ${appState.questions.length}`;
+                        DOM_CACHE.progressText.textContent = `0/${appState.questions.length}`;
+                        showToast(`成功加载 ${appState.questions.length} 道题目！`, 'success');
+                    } else {
+                        showToast('未解析到有效题目，请检查文件格式！', 'error');
+                    }
+                } catch (error) {
+                    console.error('解析文件失败:', error);
+                    showToast('文件解析失败，请检查文件格式！', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        /**
+         * 解析文本格式的题库（支持单选/多选/判断，兼容所有多选题答案格式）
+         * @param {string} text - 题库文本内容
+         * @returns {Array<Object>} 解析后的题目数组
+         * @example
+         * 单选题：问题|A|B|C|D|A
+         * 多选题：问题|A|B|C|D|ABC（或A,B,C/A B C/abcd）
+         * 判断题：问题|对|错|||对（或错）
+         */
+        function parseQuestions(text) {
+            const lines = text.replace(/\r\n/g, '\n').split('\n').filter(line => line.trim());
+            const questions = [];
+            let questionId = 1;
+
+            for (let line of lines) {
+                line = line.trim();
+                // 分割并清理空值（兼容|和,分隔）
+                let parts = line.split(/[,|]/).map(part => part.trim()).filter(part => part);
+                
+                // 最少需要6个部分（问题|选项1|选项2|空|空|答案）
+                if (parts.length < 6) {
+                    console.warn(`第${questionId}行格式错误，跳过：${line}`);
+                    continue;
+                }
+
+                // 提取基础信息
+                const questionText = parts[0];
+                const options = [
+                    parts[1] || '',
+                    parts[2] || '',
+                    parts[3] || '',
+                    parts[4] || ''
+                ];
+                let answerStr = parts[5].toUpperCase(); // 统一转为大写
+
+                // 判断题型
+                let questionType = 'single';
+                // 判断题：选项为 对/错
+                if ((options[0] === '对' && options[1] === '错') && !options[2] && !options[3]) {
+                    questionType = 'judge';
+                    // 统一判断题答案格式
+                    answerStr = answerStr === '对' || answerStr === 'A' ? '对' : '错';
+                } 
+                // 多选题：答案包含多个选项（只要不是单个A/B/C/D/对/错，都判定为多选）
+                else if (!['A', 'B', 'C', 'D', '对', '错'].includes(answerStr)) {
+                    questionType = 'multiple';
+                    // 彻底拆分多选题答案：兼容所有格式
+                    let answers = [];
+                    // 1. 先按分隔符拆分（逗号、空格）
+                    answerStr = answerStr.replace(/\s+/g, ',').replace(/,,+/g, ',');
+                    let tempAnswers = answerStr.split(',').filter(ans => ans);
+                    
+                    // 2. 对每个拆分结果进一步拆分为单个字母（处理ABC、ABD等连续字母）
+                    tempAnswers.forEach(ans => {
+                        if (ans.length > 1) {
+                            // 拆分为单个字母并过滤有效选项
+                            const singleLetters = ans.split('').filter(letter => CONSTANTS.ANSWER_OPTIONS.includes(letter));
+                            answers = answers.concat(singleLetters);
+                        } else {
+                            answers.push(ans);
+                        }
+                    });
+                    
+                    // 3. 去重、排序、过滤有效选项
+                    answers = [...new Set(answers)] // 去重
+                              .filter(ans => CONSTANTS.ANSWER_OPTIONS.includes(ans)) // 过滤有效选项
+                              .sort(); // 排序
+                    answerStr = answers.join(',');
+                }
+
+                // 验证答案有效性
+                let correctAnswers = [];
+                if (questionType === 'judge') {
+                    correctAnswers = [answerStr]; // 对/错
+                } else if (questionType === 'multiple') {
+                    correctAnswers = answerStr.split(',').filter(ans => ans);
+                } else {
+                    correctAnswers = [answerStr]; // 单选题单个答案
+                }
+
+                if (correctAnswers.length === 0) {
+                    console.warn(`第${questionId}行正确答案错误，跳过：${line}`);
+                    continue;
+                }
+
+                // 创建题目对象
+                const question = {
+                    id: questionId++,
+                    question: questionText,
+                    type: questionType,
+                    options: options,
+                    correctAnswers: correctAnswers
+                };
+
+                questions.push(question);
+            }
+
+            return questions;
+        }
+
+        // 开始刷题
+        function startQuiz() {
+            appState.currentIndex = 0;
+            appState.elapsedTime = 0;
+            appState.selectedOptions = [];
+            appState.isAnswered = false;
+            
+            updateQuestionDisplay();
+            updateNavButtons();
+            updateStatsDisplay();
+            updateProgress();
+            startTimer();
+            
+            showToast('开始刷题！加油！', 'success');
+        }
+
+        // 更新题目显示
+        function updateQuestionDisplay() {
+            if (appState.questions.length === 0) return;
+            
+            const question = appState.questions[appState.currentIndex];
+            
+            // 更新题目信息
+            DOM_CACHE.questionNum.textContent = `题目 #${question.id}`;
+            DOM_CACHE.questionText.textContent = question.question;
+            
+            // 重置作答状态
+            appState.isAnswered = false;
+            appState.selectedOptions = appState.answers[question.id]?.selected || [];
+            
+            // 渲染选项
+            renderOptions();
+            updateProgress();
+            updateNavButtons();
+        }
+
+        /**
+         * 渲染选项（适配单选/多选/判断）
+         */
+        function renderOptions() {
+            DOM_CACHE.optionsContainer.innerHTML = '';
+            const question = appState.questions[appState.currentIndex];
+            
+            if (question.type === 'judge') {
+                // 判断题渲染
+                const options = ['对', '错'];
+                options.forEach((option, index) => {
+                    const button = createOptionButton(option, option, question);
+                    DOM_CACHE.optionsContainer.appendChild(button);
+                });
+            } else {
+                // 单选/多选题渲染
+                CONSTANTS.ANSWER_OPTIONS.forEach((letter, index) => {
+                    const optionText = question.options[index];
+                    if (!optionText) return; // 跳过空选项
+                    
+                    const button = createOptionButton(letter, optionText, question);
+                    DOM_CACHE.optionsContainer.appendChild(button);
+                });
+            }
+        }
+
+        /**
+         * 创建选项按钮
+         * @param {string} optionKey - 选项标识（A/B/C/D/对/错）
+         * @param {string} optionText - 选项文本
+         * @param {object} question - 题目对象
+         * @returns {HTMLElement} 按钮元素
+         */
+        function createOptionButton(optionKey, optionText, question) {
+            const button = document.createElement('button');
+            button.className = 'option-btn';
+            button.dataset.option = optionKey;
+            
+            // 设置按钮内容
+            button.innerHTML = `
+                <span class="option-letter">${optionKey}</span>
+                <span class="option-text">${optionText}</span>
+            `;
+            
+            // 恢复选中状态
+            if (appState.selectedOptions.includes(optionKey)) {
+                button.classList.add('selected');
+            }
+            
+            // 如果已作答，显示对错状态
+            if (appState.answers[question.id]?.isAnswered) {
+                const isCorrect = question.correctAnswers.includes(optionKey);
+                const isSelected = appState.selectedOptions.includes(optionKey);
+                
+                if (isCorrect) {
+                    button.classList.add('correct');
+                } else if (isSelected && !isCorrect) {
+                    button.classList.add('incorrect');
+                }
+            }
+            
+            return button;
+        }
+
+        /**
+         * 处理选项选择（支持单选/多选/判断，优化多选题选择逻辑）
+         * @param {string} selectedOption - 选中的选项
+         */
+        function selectAnswer(selectedOption) {
+            const question = appState.questions[appState.currentIndex];
+            
+            // 重置选项样式
+            const optionButtons = document.querySelectorAll('.option-btn');
+            
+            // 单选/判断题逻辑：只能选一个
+            if (question.type === 'single' || question.type === 'judge') {
+                optionButtons.forEach(btn => btn.classList.remove('selected'));
+                appState.selectedOptions = [selectedOption];
+            } 
+            // 多选题逻辑：可多选，toggle选中状态
+            else if (question.type === 'multiple') {
+                const optionIndex = appState.selectedOptions.indexOf(selectedOption);
+                if (optionIndex > -1) {
+                    // 取消选中
+                    appState.selectedOptions.splice(optionIndex, 1);
+                    optionButtons.forEach(btn => {
+                        if (btn.dataset.option === selectedOption) {
+                            btn.classList.remove('selected');
+                        }
+                    });
+                } else {
+                    // 选中
+                    appState.selectedOptions.push(selectedOption);
+                    optionButtons.forEach(btn => {
+                        if (btn.dataset.option === selectedOption) {
+                            btn.classList.add('selected');
+                        }
+                    });
+                }
+            }
+
+            // 验证答案
+            validateAnswer();
+        }
+
+        /**
+         * 验证答案并更新状态
+         */
+        function validateAnswer() {
+            const question = appState.questions[appState.currentIndex];
+            appState.isAnswered = true;
+            
+            // 排序后比较答案
+            const sortedUserAnswers = [...appState.selectedOptions].sort();
+            const sortedCorrectAnswers = [...question.correctAnswers].sort();
+            const isCorrect = JSON.stringify(sortedUserAnswers) === JSON.stringify(sortedCorrectAnswers);
+
+            // 标记对错选项
+            markAnswerResult(isCorrect, question);
+
+            // 撤销原有统计
+            const prevAnswer = appState.answers[question.id];
+            if (prevAnswer) {
+                if (prevAnswer.isCorrect) {
+                    appState.stats.correct--;
+                } else {
+                    appState.stats.incorrect--;
+                }
+            }
+
+            // 更新统计
+            if (isCorrect) {
+                appState.stats.correct++;
+                showToast('回答正确！', 'success');
+                // 答对后自动跳转下一题
+                setTimeout(() => {
+                    if (appState.currentIndex < appState.questions.length - 1) {
+                        goToNextQuestion();
+                    }
+                }, CONSTANTS.AUTO_NEXT_DELAY);
+            } else {
+                appState.stats.incorrect++;
+                showToast('回答错误！', 'error');
+            }
+            
+            // 更新已答题数
+            appState.stats.totalAttempted = Object.keys(appState.answers).length;
+            if (!prevAnswer) {
+                appState.stats.totalAttempted++;
+            }
+
+            // 保存答案
+            appState.answers[question.id] = {
+                selected: appState.selectedOptions,
+                isCorrect: isCorrect,
+                isAnswered: true
+            };
+
+            // 更新UI
+            updateStatsDisplay();
+            saveToStorage();
+        }
+
+        /**
+         * 标记答案结果（正确标绿，错误标红）
+         * @param {boolean} isCorrect - 是否正确
+         * @param {object} question - 题目对象
+         */
+        function markAnswerResult(isCorrect, question) {
+            const optionButtons = document.querySelectorAll('.option-btn');
+            
+            optionButtons.forEach(btn => {
+                const option = btn.dataset.option;
+                btn.disabled = true; // 禁用选项
+                
+                // 正确答案标绿
+                if (question.correctAnswers.includes(option)) {
+                    btn.classList.add('correct');
+                }
+                // 错误选择标红
+                else if (appState.selectedOptions.includes(option) && !isCorrect) {
+                    btn.classList.add('incorrect');
+                }
+            });
+        }
+
+        // 上一题
+        function goToPrevQuestion() {
+            if (appState.currentIndex > 0) {
+                appState.currentIndex--;
+                updateQuestionDisplay();
+            }
+        }
+
+        // 下一题
+        function goToNextQuestion() {
+            if (appState.currentIndex < appState.questions.length - 1) {
+                appState.currentIndex++;
+                updateQuestionDisplay();
+            } else {
+                showToast('已完成所有题目！', 'info');
+            }
+        }
+
+        // 更新导航按钮状态
+        function updateNavButtons() {
+            DOM_CACHE.prevBtn.disabled = appState.currentIndex === 0;
+            DOM_CACHE.nextBtn.disabled = appState.currentIndex >= appState.questions.length - 1;
+        }
+
+        // 更新进度条和进度文本
+        function updateProgress() {
+            if (appState.questions.length === 0) return;
+            
+            const progress = ((appState.currentIndex + 1) / appState.questions.length) * 100;
+            DOM_CACHE.progressBar.style.width = `${progress}%`;
+            DOM_CACHE.progressText.textContent = `${appState.currentIndex + 1}/${appState.questions.length}`;
+        }
+
+        // 更新统计显示
+        function updateStatsDisplay() {
+            DOM_CACHE.correctCount.textContent = appState.stats.correct;
+            DOM_CACHE.incorrectCount.textContent = appState.stats.incorrect;
+            DOM_CACHE.attemptedCount.textContent = appState.stats.totalAttempted;
+        }
+
+        // 启动计时器
+        function startTimer() {
+            if (appState.timerId) clearInterval(appState.timerId);
+            updateTimer();
+            appState.timerId = setInterval(updateTimer, CONSTANTS.TIMER_INTERVAL);
+        }
+
+        // 更新计时器显示
+        function updateTimer() {
+            appState.elapsedTime++;
+            const hours = Math.floor(appState.elapsedTime / 3600).toString().padStart(2, '0');
+            const minutes = Math.floor((appState.elapsedTime % 3600) / 60).toString().padStart(2, '0');
+            const seconds = (appState.elapsedTime % 60).toString().padStart(2, '0');
+            DOM_CACHE.timer.textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        // 切换主题
+        function toggleTheme() {
+            const body = document.body;
+            appState.settings.theme = appState.settings.theme === 'light' ? 'dark' : 'light';
+            
+            if (appState.settings.theme === 'dark') {
+                body.classList.add('dark-mode');
+            } else {
+                body.classList.remove('dark-mode');
+            }
+            
+            saveToStorage();
+        }
+
+        // 显示提示框
+        function showToast(message, type = 'info') {
+            const toast = DOM_CACHE.toast;
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.style.opacity = '1';
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+            }, CONSTANTS.TOAST_DURATION);
+        }
+
+        // 保存到本地存储
+        function saveToStorage() {
+            try {
+                const data = {
+                    settings: appState.settings,
+                    stats: appState.stats,
+                    answers: appState.answers,
+                    currentIndex: appState.currentIndex
+                };
+                localStorage.setItem(CONSTANTS.STORAGE_KEY, JSON.stringify(data));
+            } catch (error) {
+                console.error('保存数据失败:', error);
+            }
+        }
+
+        // 从本地存储加载
+        function loadFromStorage() {
+            try {
+                const saved = localStorage.getItem(CONSTANTS.STORAGE_KEY);
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    if (data.settings) appState.settings = data.settings;
+                    if (data.stats) appState.stats = data.stats;
+                    if (data.answers) appState.answers = data.answers;
+                    if (typeof data.currentIndex === 'number') appState.currentIndex = data.currentIndex;
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+
+        // 初始化应用
+        window.onload = initApp;
+    </script>
 </body>
 </html>
