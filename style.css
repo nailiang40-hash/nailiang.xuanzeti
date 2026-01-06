@@ -275,7 +275,7 @@ body {
     gap: 10px;
 }
 
-/* 控制面板样式 */
+/* 控制面板样式 - 新增模式选择器样式 */
 .progress-container {
     margin-bottom: 20px;
 }
@@ -325,24 +325,31 @@ body {
 }
 
 .mode-selector {
-    display: flex;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
     margin-bottom: 25px;
 }
 
 .mode-btn {
-    flex: 1;
-    padding: 12px;
+    padding: 12px 8px;
     border: 2px solid #dee2e6;
     background: none;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 4px;
     transition: all 0.3s;
+    text-align: center;
+    min-height: 60px;
+}
+
+.mode-btn i {
+    font-size: 16px;
 }
 
 .mode-btn.active {
@@ -441,6 +448,7 @@ body {
     }
 }
 
+/* 修改选项按钮样式 */
 .option-btn {
     min-height: 70px;
     padding: 20px;
@@ -456,6 +464,7 @@ body {
     align-items: center;
     gap: 15px;
     text-align: left;
+    width: 100%;
 }
 
 .option-btn:hover:not(.selected):not(.correct):not(.incorrect) {
@@ -533,9 +542,13 @@ body {
     color: #dc3545;
 }
 
+/* 修改问题操作按钮样式 */
 .question-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
 }
 
 .hint-box {
@@ -884,6 +897,11 @@ body.dark-theme .nav-btn {
 body.dark-theme .mode-btn {
     border-color: #4a5568;
     color: #e2e8f0;
+}
+
+body.dark-theme .mode-btn.active {
+    border-color: #4a6bff;
+    background-color: rgba(74, 107, 255, 0.2);
 }
 
 body.dark-theme .setting select {
