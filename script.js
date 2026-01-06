@@ -16,8 +16,7 @@ let appState = {
         incorrect: 0,
         total: 0,
         startTime: null
-    },
-    randomModeQuestions: [] // 存储随机模式的题目顺序
+    }
 };
 
 // 示例题库
@@ -68,16 +67,9 @@ function setupOptionButtons() {
     
     if (appState.questions.length === 0) return;
     
-    // 获取当前题目（考虑随机模式）
-    let question;
-    if (appState.settings.mode === 'random') {
-        question = appState.randomModeQuestions[appState.currentIndex];
-    } else {
-        question = appState.questions[appState.currentIndex];
-    }
-    
-    const userAnswer = appState.answers[question.id];
+    const question = appState.questions[appState.currentIndex];
     const letters = ['A', 'B', 'C', 'D'];
+    const userAnswer = appState.answers[question.id];
     
     letters.forEach((letter, index) => {
         const button = document.createElement('button');
@@ -90,11 +82,11 @@ function setupOptionButtons() {
             <span class="option-text">${question.options[index] || '选项' + letter}</span>
         `;
         
-        // ==== 关键修复：正确的点击事件绑定 ====
-        button.onclick = function() {
+        // ==== 关键修复：使用事件委托 ====
+        button.addEventListener('click', function() {
             console.log('选项按钮被点击:', letter);
             selectAnswer(letter);
-        };
+        });
         
         // 如果用户已经回答了这道题，显示状态
         if (userAnswer) {
@@ -127,14 +119,7 @@ function selectAnswer(selectedOption) {
         return;
     }
     
-    // 获取当前题目（考虑随机模式）
-    let question;
-    if (appState.settings.mode === 'random') {
-        question = appState.randomModeQuestions[appState.currentIndex];
-    } else {
-        question = appState.questions[appState.currentIndex];
-    }
-    
+    const question = appState.questions[appState.currentIndex];
     const userAnswer = appState.answers[question.id];
     
     // 如果已经回答过且在测试模式下，不允许修改
@@ -175,8 +160,8 @@ function selectAnswer(selectedOption) {
         showNextButton();
     }
     
-    // 在测试或随机模式下自动跳转到下一题
-    if (appState.settings.mode === 'test' || appState.settings.mode === 'random') {
+    // 在测试模式下自动跳转到下一题
+    if (appState.settings.mode === 'test') {
         setTimeout(() => {
             goToNextQuestion();
         }, 1500);
@@ -217,9 +202,16 @@ function showNextButton() {
     nextBtn.className = 'btn btn-success';
     nextBtn.innerHTML = '<i class="fas fa-arrow-right"></i> 下一题';
     nextBtn.onclick = function() {
-        // 清除当前题目的反馈信息
-        clearFeedback();
         goToNextQuestion();
+        // 切换到下一题后清除反馈
+        const feedbackBox = document.getElementById('feedbackBox');
+        feedbackBox.className = 'feedback-box';
+        feedbackBox.innerHTML = `
+            <i class="fas fa-info-circle"></i>
+            <span>请选择一个答案</span>
+        `;
+        // 移除按钮本身
+        this.remove();
     };
     
     // 在显示答案按钮前插入下一题按钮
@@ -227,42 +219,15 @@ function showNextButton() {
     questionActions.insertBefore(nextBtn, showAnswerBtn);
 }
 
-// 清除反馈信息
-function clearFeedback() {
-    const feedbackBox = document.getElementById('feedbackBox');
-    feedbackBox.className = 'feedback-box';
-    feedbackBox.innerHTML = `
-        <i class="fas fa-info-circle"></i>
-        <span>请选择一个答案</span>
-    `;
-    
-    // 移除下一题按钮
-    const nextBtn = document.getElementById('nextQuestionBtn');
-    if (nextBtn) nextBtn.remove();
-}
-
 // 更新题目显示
 function updateQuestionDisplay() {
     if (appState.questions.length === 0) return;
     
-    // 获取当前题目（考虑随机模式）
-    let question;
-    let questionNumber;
-    if (appState.settings.mode === 'random') {
-        question = appState.randomModeQuestions[appState.currentIndex];
-        questionNumber = appState.currentIndex + 1;
-    } else {
-        question = appState.questions[appState.currentIndex];
-        questionNumber = question.id;
-    }
+    const question = appState.questions[appState.currentIndex];
     
     // 更新题目编号和总数
-    const totalQuestions = appState.settings.mode === 'random' 
-        ? appState.randomModeQuestions.length 
-        : appState.questions.length;
-    
-    document.getElementById('questionNum').textContent = `题目 #${questionNumber}`;
-    document.getElementById('totalQuestions').textContent = `/ ${totalQuestions}`;
+    document.getElementById('questionNum').textContent = `题目 #${question.id}`;
+    document.getElementById('totalQuestions').textContent = `/ ${appState.questions.length}`;
     
     // 更新题目文本
     document.getElementById('questionText').textContent = question.question;
@@ -275,36 +240,6 @@ function updateQuestionDisplay() {
     
     // 更新导航按钮状态
     updateNavButtons();
-    
-    // 更新模式按钮状态
-    updateModeButtons();
-    
-    // 清除反馈信息（除非当前题目已答过）
-    const userAnswer = appState.answers[question.id];
-    if (!userAnswer) {
-        clearFeedback();
-    }
-    
-    // 如果有答案，显示反馈
-    if (userAnswer && appState.settings.mode === 'practice') {
-        showAnswerFeedback(userAnswer.isCorrect, userAnswer.userAnswer, question.correctAnswer);
-        
-        // 如果已经回答了并且正确，显示下一题按钮
-        if (userAnswer.isCorrect) {
-            showNextButton();
-        }
-    }
-}
-
-// 更新模式按钮状态
-function updateModeButtons() {
-    const practiceBtn = document.getElementById('practiceBtn');
-    const testBtn = document.getElementById('testBtn');
-    const randomBtn = document.getElementById('randomBtn');
-    
-    if (practiceBtn) practiceBtn.classList.toggle('active', appState.settings.mode === 'practice');
-    if (testBtn) testBtn.classList.toggle('active', appState.settings.mode === 'test');
-    if (randomBtn) randomBtn.classList.toggle('active', appState.settings.mode === 'random');
 }
 
 // ==== 以下是完整的事件绑定函数 ====
@@ -333,7 +268,6 @@ function bindEvents() {
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadArea.style.borderColor = '#4a6bff';
-            uploadArea.style.borderColor = '#4a6bff';
             uploadArea.style.backgroundColor = 'rgba(74, 107, 255, 0.1)';
         });
         
@@ -353,13 +287,13 @@ function bindEvents() {
         });
     }
     
-    // 开始刷题按钮 - 关键修复
+    // 开始刷题按钮
     const startQuizBtn = document.getElementById('startQuizBtn');
     if (startQuizBtn) {
         startQuizBtn.addEventListener('click', startQuiz);
     }
     
-    // 加载示例题库按钮 - 关键修复
+    // 加载示例题库按钮
     const loadSampleBtn = document.getElementById('loadSampleBtn');
     if (loadSampleBtn) {
         loadSampleBtn.addEventListener('click', loadSampleQuestions);
@@ -368,12 +302,7 @@ function bindEvents() {
     // 模式选择按钮
     document.getElementById('practiceBtn')?.addEventListener('click', () => setMode('practice'));
     document.getElementById('testBtn')?.addEventListener('click', () => setMode('test'));
-    
-    // 新增随机模式按钮（需要在HTML中添加）
-    const randomBtn = document.getElementById('randomBtn');
-    if (randomBtn) {
-        randomBtn.addEventListener('click', () => setMode('random'));
-    }
+    document.getElementById('randomBtn')?.addEventListener('click', () => setMode('random'));
     
     // 导航按钮
     document.getElementById('firstBtn')?.addEventListener('click', goToFirstQuestion);
@@ -414,43 +343,36 @@ function setMode(mode) {
     }
     
     appState.settings.mode = mode;
-    appState.currentIndex = 0;
     
     // 如果是随机模式，打乱题目顺序
     if (mode === 'random') {
-        initRandomMode();
+        // 复制题库并打乱顺序
+        const shuffled = [...appState.questions].sort(() => Math.random() - 0.5);
+        appState.questions = shuffled;
+        appState.currentIndex = 0;
+        showToast('已切换到随机模式，题目顺序已打乱！', 'info');
+    } else if (mode === 'practice') {
+        showToast('已切换到练习模式', 'info');
+    } else if (mode === 'test') {
+        showToast('已切换到测试模式', 'info');
     }
     
-    // 清除所有答案状态（保持已答记录）
-    clearFeedback();
+    // 更新模式按钮状态
+    updateModeButtons();
     
     // 更新显示
     updateQuestionDisplay();
-    updateModeButtons();
-    
-    showToast(`已切换到${getModeName(mode)}模式`, 'info');
 }
 
-// 获取模式名称
-function getModeName(mode) {
-    switch(mode) {
-        case 'practice': return '练习';
-        case 'test': return '测试';
-        case 'random': return '随机';
-        default: return '练习';
-    }
-}
-
-// 初始化随机模式
-function initRandomMode() {
-    // 复制题库并打乱顺序
-    appState.randomModeQuestions = [...appState.questions]
-        .sort(() => Math.random() - 0.5);
+// 更新模式按钮状态
+function updateModeButtons() {
+    const practiceBtn = document.getElementById('practiceBtn');
+    const testBtn = document.getElementById('testBtn');
+    const randomBtn = document.getElementById('randomBtn');
     
-    // 给每个题目一个临时ID用于显示
-    appState.randomModeQuestions.forEach((q, index) => {
-        q.tempId = index + 1;
-    });
+    if (practiceBtn) practiceBtn.classList.toggle('active', appState.settings.mode === 'practice');
+    if (testBtn) testBtn.classList.toggle('active', appState.settings.mode === 'test');
+    if (randomBtn) randomBtn.classList.toggle('active', appState.settings.mode === 'random');
 }
 
 // 加载示例题库
@@ -460,391 +382,4 @@ function loadSampleQuestions() {
     appState.questions = SAMPLE_QUESTIONS;
     appState.stats.total = SAMPLE_QUESTIONS.length;
     
-    // 显示文件信息
-    document.getElementById('fileName').textContent = '示例题库';
-    document.getElementById('fileStats').textContent = `共 ${SAMPLE_QUESTIONS.length} 道题目`;
-    document.getElementById('fileInfo').style.display = 'flex';
-    
-    showToast(`示例题库加载成功！共 ${SAMPLE_QUESTIONS.length} 道题目`, 'success');
-}
-
-// 开始刷题
-function startQuiz() {
-    if (appState.questions.length === 0) {
-        showToast('请先上传题库或加载示例题库！', 'error');
-        return;
-    }
-    
-    console.log('开始刷题...');
-    
-    // 切换到答题界面
-    document.getElementById('uploadSection').style.display = 'none';
-    document.getElementById('quizSection').style.display = 'block';
-    
-    // 重置状态
-    appState.currentIndex = 0;
-    appState.stats.startTime = Date.now();
-    
-    // 如果当前是随机模式，初始化随机顺序
-    if (appState.settings.mode === 'random') {
-        initRandomMode();
-    }
-    
-    // 更新显示
-    updateQuestionDisplay();
-    updateStats();
-    
-    // 开始计时器
-    startTimer();
-    
-    showToast('开始刷题！使用键盘A/B/C/D键快速答题', 'info');
-}
-
-// 处理文件选择
-function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    if (!file.name.toLowerCase().endsWith('.txt')) {
-        showToast('请选择TXT格式的文件！', 'error');
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const content = e.target.result;
-            const questions = parseQuestions(content);
-            
-            if (questions.length === 0) {
-                showToast('未找到有效题目，请检查文件格式！', 'error');
-                return;
-            }
-            
-            appState.questions = questions;
-            appState.stats.total = questions.length;
-            
-            // 显示文件信息
-            document.getElementById('fileName').textContent = file.name;
-            document.getElementById('fileStats').textContent = `共 ${questions.length} 道题目`;
-            document.getElementById('fileInfo').style.display = 'flex';
-            
-            showToast(`成功加载 ${questions.length} 道题目！`, 'success');
-            
-        } catch (error) {
-            console.error('解析文件失败:', error);
-            showToast('文件解析失败，请检查格式！', 'error');
-        }
-    };
-    
-    reader.readAsText(file, 'UTF-8');
-}
-
-// 解析题库文本
-function parseQuestions(text) {
-    const lines = text.split('\n');
-    const questions = [];
-    let questionId = 1;
-    
-    for (let line of lines) {
-        line = line.trim();
-        if (!line) continue;
-        
-        let parts;
-        if (line.includes('|')) {
-            parts = line.split('|');
-        } else if (line.includes(',')) {
-            parts = line.split(',');
-        } else {
-            continue;
-        }
-        
-        parts = parts.map(part => part.trim());
-        
-        if (parts.length >= 6) {
-            const question = {
-                id: questionId++,
-                question: parts[0],
-                options: [
-                    parts[1] || '选项A',
-                    parts[2] || '选项B',
-                    parts[3] || '选项C',
-                    parts[4] || '选项D'
-                ],
-                correctAnswer: parts[5].toUpperCase().charAt(0),
-                explanation: parts[6] || ''
-            };
-            
-            if (['A', 'B', 'C', 'D'].includes(question.correctAnswer)) {
-                questions.push(question);
-            }
-        }
-    }
-    
-    return questions;
-}
-
-// 导航功能
-function goToFirstQuestion() {
-    appState.currentIndex = 0;
-    updateQuestionDisplay();
-}
-
-function goToPrevQuestion() {
-    const totalQuestions = appState.settings.mode === 'random' 
-        ? appState.randomModeQuestions.length 
-        : appState.questions.length;
-    
-    if (appState.currentIndex > 0) {
-        appState.currentIndex--;
-        updateQuestionDisplay();
-    }
-}
-
-function goToNextQuestion() {
-    const totalQuestions = appState.settings.mode === 'random' 
-        ? appState.randomModeQuestions.length 
-        : appState.questions.length;
-    
-    if (appState.currentIndex < totalQuestions - 1) {
-        appState.currentIndex++;
-        updateQuestionDisplay();
-    } else {
-        if (appState.settings.mode === 'random') {
-            // 随机模式重新打乱
-            initRandomMode();
-            appState.currentIndex = 0;
-            updateQuestionDisplay();
-            showToast('已重新随机排序题目！', 'info');
-        } else {
-            showToast('已经是最后一题了！', 'info');
-        }
-    }
-}
-
-function goToLastQuestion() {
-    const totalQuestions = appState.settings.mode === 'random' 
-        ? appState.randomModeQuestions.length 
-        : appState.questions.length;
-    
-    appState.currentIndex = totalQuestions - 1;
-    updateQuestionDisplay();
-}
-
-function jumpToQuestion() {
-    const input = document.getElementById('jumpInput');
-    const index = parseInt(input.value) - 1;
-    
-    const totalQuestions = appState.settings.mode === 'random' 
-        ? appState.randomModeQuestions.length 
-        : appState.questions.length;
-    
-    if (!isNaN(index) && index >= 0 && index < totalQuestions) {
-        appState.currentIndex = index;
-        updateQuestionDisplay();
-    }
-}
-
-// 更新进度
-function updateProgress() {
-    const total = appState.settings.mode === 'random' 
-        ? appState.randomModeQuestions.length 
-        : appState.questions.length;
-    const current = appState.currentIndex + 1;
-    const progressPercent = (current / total) * 100;
-    
-    document.getElementById('progressText').textContent = `${current}/${total}`;
-    document.getElementById('progressFill').style.width = `${progressPercent}%`;
-    
-    document.getElementById('jumpInput').value = current;
-    document.getElementById('jumpInput').max = total;
-}
-
-// 更新导航按钮状态
-function updateNavButtons() {
-    const firstBtn = document.getElementById('firstBtn');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const lastBtn = document.getElementById('lastBtn');
-    
-    const totalQuestions = appState.settings.mode === 'random' 
-        ? appState.randomModeQuestions.length 
-        : appState.questions.length;
-    
-    if (firstBtn) firstBtn.disabled = appState.currentIndex === 0;
-    if (prevBtn) prevBtn.disabled = appState.currentIndex === 0;
-    if (nextBtn) nextBtn.disabled = appState.currentIndex === totalQuestions - 1;
-    if (lastBtn) lastBtn.disabled = appState.currentIndex === totalQuestions - 1;
-}
-
-// 更新统计信息
-function updateStats() {
-    const totalAnswered = appState.stats.correct + appState.stats.incorrect;
-    const accuracy = totalAnswered > 0 ? Math.round((appState.stats.correct / totalAnswered) * 100) : 0;
-    
-    document.getElementById('correctCount').textContent = appState.stats.correct;
-    document.getElementById('incorrectCount').textContent = appState.stats.incorrect;
-    document.getElementById('accuracyRate').textContent = `${accuracy}%`;
-    document.getElementById('answeredCount').textContent = totalAnswered;
-}
-
-// 更新字体大小
-function updateFontSize() {
-    document.body.classList.remove('font-small', 'font-medium', 'font-large');
-    document.body.classList.add(`font-${appState.settings.fontSize}`);
-}
-
-// 更新主题
-function updateTheme() {
-    if (appState.settings.theme === 'dark') {
-        document.body.classList.add('dark-theme');
-    } else {
-        document.body.classList.remove('dark-theme');
-    }
-}
-
-// 切换显示答案
-function toggleShowAnswer() {
-    appState.settings.showAnswer = !appState.settings.showAnswer;
-    updateQuestionDisplay();
-    
-    const btn = document.getElementById('showAnswerBtn');
-    btn.innerHTML = appState.settings.showAnswer 
-        ? '<i class="fas fa-eye-slash"></i> 隐藏答案'
-        : '<i class="fas fa-eye"></i> 显示答案';
-}
-
-// 重置答题记录
-function resetAnswers() {
-    if (confirm('确定要重置所有答题记录吗？')) {
-        appState.answers = {};
-        appState.stats.correct = 0;
-        appState.stats.incorrect = 0;
-        appState.currentIndex = 0;
-        
-        saveToStorage();
-        updateQuestionDisplay();
-        updateStats();
-        
-        showToast('答题记录已重置', 'info');
-    }
-}
-
-// 返回上传界面
-function backToUpload() {
-    if (confirm('返回上传界面？当前进度会保存。')) {
-        document.getElementById('uploadSection').style.display = 'block';
-        document.getElementById('quizSection').style.display = 'none';
-    }
-}
-
-// 开始计时器
-function startTimer() {
-    updateTimer();
-    setInterval(updateTimer, 1000);
-}
-
-function updateTimer() {
-    if (!appState.stats.startTime) return;
-    
-    const elapsedSeconds = Math.floor((Date.now() - appState.stats.startTime) / 1000);
-    const minutes = Math.floor(elapsedSeconds / 60);
-    const seconds = elapsedSeconds % 60;
-    
-    document.getElementById('timer').textContent = 
-        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-}
-
-// 键盘快捷键
-function handleKeydown(event) {
-    // 防止在输入框中触发快捷键
-    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
-        return;
-    }
-    
-    const key = event.key.toUpperCase();
-    
-    // 选择答案
-    if (['A', 'B', 'C', 'D'].includes(key)) {
-        event.preventDefault();
-        selectAnswer(key);
-    } else if (['1', '2', '3', '4'].includes(key)) {
-        event.preventDefault();
-        const options = ['A', 'B', 'C', 'D'];
-        selectAnswer(options[parseInt(key) - 1]);
-    }
-    // 导航
-    else if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        goToPrevQuestion();
-    } else if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        goToNextQuestion();
-    }
-    // 其他快捷键
-    else if (event.key === ' ') {
-        event.preventDefault();
-        toggleShowAnswer();
-    } else if (event.key === 'Enter' && document.getElementById('nextQuestionBtn')) {
-        event.preventDefault();
-        document.getElementById('nextQuestionBtn').click();
-    }
-}
-
-// 本地存储
-function loadFromStorage() {
-    try {
-        const saved = localStorage.getItem('quizAppData');
-        if (saved) {
-            const data = JSON.parse(saved);
-            if (data.settings) appState.settings = data.settings;
-            if (data.stats) appState.stats = data.stats;
-            if (data.answers) appState.answers = data.answers;
-            if (data.currentIndex) appState.currentIndex = data.currentIndex;
-            
-            // 应用设置
-            updateFontSize();
-            updateTheme();
-        }
-    } catch (error) {
-        console.error('加载本地存储数据失败:', error);
-    }
-}
-
-function saveToStorage() {
-    try {
-        const data = {
-            settings: appState.settings,
-            stats: appState.stats,
-            answers: appState.answers,
-            currentIndex: appState.currentIndex
-        };
-        localStorage.setItem('quizAppData', JSON.stringify(data));
-    } catch (error) {
-        console.error('保存到本地存储失败:', error);
-    }
-}
-
-// 显示提示消息
-function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast');
-    toast.textContent = message;
-    toast.style.display = 'block';
-    
-    if (type === 'success') {
-        toast.style.backgroundColor = '#28a745';
-    } else if (type === 'error') {
-        toast.style.backgroundColor = '#dc3545';
-    } else if (type === 'warning') {
-        toast.style.backgroundColor = '#ffc107';
-    } else {
-        toast.style.backgroundColor = '#17a2b8';
-    }
-    
-    setTimeout(() => {
-        toast.style.display = 'none';
-    }, 3000);
-}
-
-// 调试信息
-console.log('智能刷题系统脚本加载完成');
+   
