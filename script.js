@@ -361,27 +361,32 @@ function updateModeButtons() {
 }
 
 // ==== 以下是完整的事件绑定函数 ====
+// 修改 bindEvents 函数，使用事件委托
 function bindEvents() {
     console.log('绑定事件监听器...');
     
-    // 文件选择按钮
-    const selectFileBtn = document.getElementById('selectFileBtn');
-    const fileInput = document.getElementById('fileInput');
-    
-    if (selectFileBtn && fileInput) {
-        selectFileBtn.addEventListener('click', function() {
-            console.log('点击选择文件按钮');
-            fileInput.click();
+    // 文件选择按钮 - 使用事件委托
+    const uploadArea = document.getElementById('uploadArea');
+    if (uploadArea) {
+        // 点击上传区域时委托处理
+        uploadArea.addEventListener('click', function(e) {
+            const target = e.target;
+            // 如果点击的是选择文件按钮或其子元素
+            if (target.id === 'selectFileBtn' || target.closest('#selectFileBtn')) {
+                console.log('点击选择文件按钮');
+                document.getElementById('fileInput').click();
+                e.stopPropagation();
+            }
         });
     }
     
     // 文件选择变化
+    const fileInput = document.getElementById('fileInput');
     if (fileInput) {
         fileInput.addEventListener('change', handleFileSelect);
     }
     
-    // 拖放上传
-    const uploadArea = document.getElementById('uploadArea');
+    // 拖放上传（保持原有）
     if (uploadArea) {
         uploadArea.addEventListener('dragover', function(e) {
             e.preventDefault();
@@ -405,7 +410,7 @@ function bindEvents() {
         });
     }
     
-    // 开始刷题按钮（保持原有功能）
+    // 开始刷题按钮
     const startQuizBtn = document.getElementById('startQuizBtn');
     if (startQuizBtn) {
         startQuizBtn.addEventListener('click', startQuiz);
@@ -414,8 +419,14 @@ function bindEvents() {
     // 加载示例题库按钮
     const loadSampleBtn = document.getElementById('loadSampleBtn');
     if (loadSampleBtn) {
-        loadSampleBtn.addEventListener('click', loadSampleQuestions);
+        loadSampleBtn.addEventListener('click', function() {
+            // 直接调用，不在这里处理按钮状态
+            loadSampleQuestions();
+        });
     }
+    
+    // ... 其他事件绑定保持不变
+}
     
     // 模式选择按钮
     document.getElementById('practiceBtn')?.addEventListener('click', function() {
