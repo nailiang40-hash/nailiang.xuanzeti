@@ -200,3 +200,40 @@
                             <div id="historyList" class="history-list">
                                 <p class="empty">暂无答题记录</p>
                             </div
+<!-- 修改帮助弹窗部分 -->
+<div id="helpModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-question-circle"></i> 使用帮助</h3>
+            <button class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <h4>如何上传题库？</h4>
+            <p>1. 创建TXT文件，格式：<code>题目|选项A|选项B|选项C|选项D|正确答案|解析</code></p>
+            <p>2. 点击"选择文件"或拖放文件到上传区域</p>
+            <p>3. 点击"开始刷题"按钮</p>
+            
+            <h4>题库格式说明：</h4>
+            <ul>
+                <li>使用竖线 | 或逗号 , 分隔字段</li>
+                <li><strong>单选题</strong>：正确答案为单个字母，如 A</li>
+                <li><strong>多选题</strong>：正确答案为多个字母用逗号分隔，如 A,C</li>
+                <li>解析为可选字段</li>
+            </ul>
+            
+            <h4>示例格式：</h4>
+            <pre>
+水的化学式是什么？|H2O|CO2|O2|NaCl|A|水是由氢氧原子组成的
+中国首都是哪里？|上海|广州|北京|深圳|C|北京是中国的首都
+哪些是哺乳动物？|鲸鱼|鲨鱼|海豚|企鹅|A,C|鲸鱼和海豚是哺乳动物</pre>
+            
+            <h4>键盘快捷键：</h4>
+            <ul>
+                <li>A/B/C/D：选择对应选项</li>
+                <li>←/→：上一题/下一题</li>
+                <li>空格：显示/隐藏答案</li>
+                <li>Enter：下一题（回答正确后）</li>
+            </ul>
+        </div>
+    </div>
+</div>
